@@ -1,54 +1,64 @@
-// TicTacToe.cpp : This file contains the 'main' function. Program execution begins and ends there.
-
 #include <iostream>
 #include "Game.h"
+#include "MiniMax.h"
 
 int main()
 {
     Game game;
+    MiniMax minimax;
+
+    game.set_players();
+    bool humam_turn;
+
+    std::tuple<int, int> engine_move;
     
-    int x = 0;
-    int y = 0;
+    int x;
+    int y;
 
     bool playing = true;
-    bool turnX = true;
-    int turns = 0;
     
     while (playing)
     {
-        system("CLS");
+        game.main_screen();
 
-        std::cout << std::endl << "   TIC-TAC-TOE" << std::endl;
-        game.printBoard(game.board);
+        humam_turn = (game.is_x_turn and game.playerX) or (not game.is_x_turn and game.playerO);
 
-        std::cout << "  Enter x and y coordinates (x y): ";
-        std::cin >> x >> y;
+        if (humam_turn and not game.check_winner()) {
+            std::cin >> x >> y;
+        }
+        else {
+            //Search type, 1: alpha beta, 2: basic, 3: random
+            engine_move = minimax.find_best_move(game, 2);
+            if (engine_move == std::make_tuple(0, 0)) {
+                engine_move = minimax.random_move(game);
+            }
+            x = std::get<0>(engine_move);
+            y = std::get<1>(engine_move);
+        }
 
-        if (game.validMove(game.board, x, y)) {
-            game.playMove(game.board, x, y, turnX);
-            turnX = not turnX;
-            turns++;
+        if (x == 0 && y == 0) {
+            game.undo_move();
+            if (!game.playerX or !game.playerO) {
+                game.undo_move();
+            }
+        }
+
+        if (game.valid_move(x, y)) {
+            game.play_move(x, y);
         }
         else {
             continue;
         }
         
-        if (game.checkWinner(game.board)) {
+        if (game.check_winner()) {
             playing = false;
-            system("CLS");
-            char winner = (not turnX) ? 'X' : 'O';
-            std::cout << std::endl << "  " << winner << " is the winner!" << std::endl;
-            game.printBoard(game.board);
-            system("pause");
+            game.print_result(false);
             main();
         }
 
-        if (turns > 8 && not game.checkWinner(game.board)) {
+        if (game.turns > 8 && not game.check_winner()) {
             playing = false;
-            system("CLS");
-            std::cout << std::endl << "    No winner" << std::endl;
-            game.printBoard(game.board);
-            system("pause");
+            game.print_result(true);
             main();
         }
     }
